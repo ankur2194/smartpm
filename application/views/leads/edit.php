@@ -72,22 +72,36 @@ defined('BASEPATH') or exit('No direct script access allowed');
                     </div>
 
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Cell Phone<span class="red-mark">*</span></label>
                                 <input class="form-control" placeholder="Phone 1" name="phone1" value="<?= $lead->phone1 ?>" type="text">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Home Phone</label>
                                 <input class="form-control" placeholder="Phone 2" name="phone2" value="<?= $lead->phone2 ?>" type="text">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Email</label>
                                 <input class="form-control" name="email" placeholder="Email" value="<?= $lead->email ?>" type="email">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Lead Source</label>
+                                <select name="lead_source" class="form-control">
+                                    <option value="" disabled<?= (empty($lead->lead_source) ? ' selected' : '') ?>>Select Lead Source</option>
+                                    <?php foreach ($leadSources as $leadSource) {
+                                        echo '<option value="' . $leadSource->id . '"' . ($lead->lead_source == $leadSource->id ? ' selected' : '') . '>' . $leadSource->name . '</option>';
+                                    } ?>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -188,7 +202,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 </div>
             </div>
             <div class="card">
-                <?= form_open('lead/' . $sub_base_path . $jobid . '/updatestatus', array('method' => 'post')) ?>
+                <?= form_open('lead/' . $sub_base_path . $jobid . '/updatestatus', array('id' => 'lead_edit_status', 'method' => 'post')) ?>
                 <div class="header">
                     <h4 class="title" style="float: left;">Contract Status</h4>
                     <span class="status">
@@ -199,6 +213,22 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         <select class="form-control" id="lead" name="status">
                             <?php foreach ($lead_status_tags as $s_id => $s_tags) : ?>
                                 <option value="<?= $s_id ?>" <?= ($s_id == $lead->status) ? 'selected' : '' ?>><?= $s_tags ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="header">
+                    <h4 class="title" style="float: left;">Category</h4>
+                    <?php if ($lead->category) { ?>
+                        <span class="status">
+                            <?= LeadModel::categoryToStr($lead->category) ?>
+                        </span>
+                    <?php } ?>
+                    <div class="clearfix"></div>
+                    <div class="content">
+                        <select class="form-control" id="category" name="category">
+                            <?php foreach ($lead_category_tags as $s_id => $s_tags) : ?>
+                                <option value="<?= $s_id ?>" <?= ($s_id === intval($lead->category)) ? 'selected' : '' ?>><?= $s_tags ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>

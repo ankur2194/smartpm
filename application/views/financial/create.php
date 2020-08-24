@@ -2,6 +2,24 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 ?><div class="container-fluid">
     <div class="row">
+        <div class="col-md-12">
+            <?php
+            if (!empty($this->session->flashdata('errors'))) {
+                echo '<div class="alert alert-danger fade in alert-dismissable" title="Error:"><a href="#" class="close" data-dismiss="alert" aria-label="close" title="close">×</a>';
+                echo $this->session->flashdata('errors');
+                echo '</div>';
+            }
+            ?>
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="row page-header-buttons">
+        <div class="col-md-12">
+            <a href="<?= base_url('financial/records') ?>" class="btn btn-info btn-fill"><i class="fa fa-chevron-left" aria-hidden="true"></i>&nbsp; Back</a>
+        </div>
+    </div>
+    <div class="row">
         <div class="col-md-12 max-1000-form-container">
             <div class="card">
                 <div class="header">
@@ -9,37 +27,59 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 </div>
                 <div class="content">
                     <div class="row">
-                        <div class="col-md-12">
-                            <?php
-                            if (!empty($this->session->flashdata('errors'))) {
-                                echo '<div class="alert alert-danger fade in alert-dismissable" title="Error:"><a href="#" class="close" data-dismiss="alert" aria-label="close" title="close">×</a>';
-                                echo $this->session->flashdata('errors');
-                                echo '</div>';
-                            }
-                            ?>
+                        <div id="validation-errors" class="col-md-12">
                         </div>
                     </div>
-                    <form action="<?= base_url('financial/record/store') ?>" method="post">
+                    <form id="financial_create" action="<?= base_url('financial/record/store') ?>" method="post" novalidate>
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>Party<span class="red-mark">*</span></label>
+                                    &nbsp; <label><input type="radio" name="party" id="party_vendor" value="1" checked> Vendor</label> &nbsp;
+                                    <label><input type="radio" name="party" id="party_client" value="2"> Client</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" id="vendor_id_row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>Party Name<span class="red-mark">*</span></label>
+                                    <select id="vendor_id" name="vendor_id" class="form-control">
+                                        <option value="" disabled selected>Select Vendor</option>
+                                        <?php foreach ($vendors as $vendor) {
+                                            echo '<option value="' . $vendor->id . '">' . $vendor->name . '</option>';
+                                        } ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" id="client_id_row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>Party Name<span class="red-mark">*</span></label>
+                                    <select id="client_id" name="client_id" class="form-control">
+                                        <option value="" disabled selected>Select Client</option>
+                                        <?php foreach ($clients as $client) {
+                                            echo '<option value="' . $client->id . '">' . $client->name . '</option>';
+                                        } ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Transaction Date<span class="red-mark">*</span></label>
-                                    <input class="form-control" placeholder="Transaction Date" name="transaction_date" type="date">
+                                    <input class="form-control" placeholder="Transaction Date" name="transaction_date" type="date" value="<?= date('Y-m-d') ?>">
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Transaction Number<span class="red-mark">*</span></label>
-                                    <input class="form-control" placeholder="Transaction Number" name="transaction_number" type="text">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Job<span class="red-mark">*</span></label>
-                                    <select name="job_id" class="form-control">
+                                    <select id="job_id" name="job_id" class="form-control">
                                         <option value="" disabled selected>Select Job</option>
                                         <?php foreach ($jobs as $job) {
-                                            echo '<option value="' . $job->id . '">' . 'RJOB' . $job->id . ' - ' . $job->name . '</option>';
+                                            echo '<option value="' . $job->id . '">' . (1600 + $job->id) . ' - ' . $job->name . '</option>';
                                         } ?>
                                     </select>
                                 </div>
@@ -57,8 +97,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
                                     <label>Type<span class="red-mark">*</span></label>
                                     <select name="type" class="form-control">
                                         <option value="" disabled selected>Select Type</option>
-                                        <?php foreach ($types as $type) {
-                                            echo '<option value="' . $type->id . '">' . $type->name . '</option>';
+                                        <?php foreach ($types as $id => $type) {
+                                            echo '<option value="' . $id . '">' . $type . '</option>';
                                         } ?>
                                     </select>
                                 </div>
@@ -122,17 +162,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Sales Representative<span class="red-mark">*</span></label>
-                                    <select name="sales_rep" class="form-control">
-                                        <option value="" disabled selected>Select Sales Representative</option>
-                                        <?php foreach ($users as $user) {
-                                            echo '<option value="' . $user->id . '">' . $user->name . ' (@' . $user->username . ')' . '</option>';
-                                        } ?>
-                                    </select>
-                                </div>
-                            </div>
                         </div>
                         <div class="row">
                             <div class="col-md-12">
@@ -145,7 +174,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="form-group">
-                                    <a href="<?= base_url('financial/records') ?>" class="btn btn-info btn-fill">Back</a>
                                     <button type="submit" class="btn btn-info btn-fill pull-right">Create</button>
                                 </div>
                             </div>
@@ -157,3 +185,5 @@ defined('BASEPATH') or exit('No direct script access allowed');
         </div>
     </div>
 </div>
+
+<script src="<?= base_url('assets/js/financial/create.js') ?>"></script>

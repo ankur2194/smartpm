@@ -9,8 +9,8 @@ class Tasks extends CI_Controller
     {
         parent::__construct();
 
-        $this->load->model(['TaskModel', 'UserModel', 'TaskNotesModel', 'TaskUserTagsModel', 'TaskPredecessorModel', 'TaskJobTagsModel']);
-        $this->load->library(['pagination', 'form_validation']);
+        $this->load->model(['TaskModel', 'UserModel', 'TaskNotesModel', 'TaskUserTagsModel', 'TaskPredecessorModel', 'TaskJobTagsModel', 'TaskTypeModel']);
+        $this->load->library(['form_validation', 'notify']);
 
         $this->task = new TaskModel();
         $this->user = new UserModel();
@@ -18,26 +18,33 @@ class Tasks extends CI_Controller
         $this->task_user_tags = new TaskUserTagsModel();
         $this->task_predecessor = new TaskPredecessorModel();
         $this->task_job_tags = new TaskJobTagsModel();
+        $this->taskType = new TaskTypeModel();
     }
 
-    public function index($start = 0)
+    public function index()
     {
         authAccess();
 
-        $limit = 10;
-        $pagiConfig = [
-            'base_url' => base_url('tasks'),
-            'total_rows' => $this->task->getCount(),
-            'per_page' => $limit
-        ];
-        $this->pagination->initialize($pagiConfig);
-        $tasks = $this->task->allTasks($start, $limit);
+        $tasks = $this->task->allTasks();
         $this->load->view('header', [
             'title' => $this->title
         ]);
         $this->load->view('tasks/index', [
-            'tasks' => $tasks,
-            'pagiLinks' => $this->pagination->create_links()
+            'tasks' => $tasks
+        ]);
+        $this->load->view('footer');
+    }
+
+    public function status($status)
+    {
+        authAccess();
+
+        $tasks = $this->task->allTasksByStatus($status);
+        $this->load->view('header', [
+            'title' => $this->title
+        ]);
+        $this->load->view('tasks/index', [
+            'tasks' => $tasks
         ]);
         $this->load->view('footer');
     }
@@ -46,16 +53,16 @@ class Tasks extends CI_Controller
     {
         authAccess();
 
-        $types = TaskModel::getTypes();
         $levels = TaskModel::getLevels();
         $tasks = $this->task->getTaskList();
         $users = $this->user->getUserList();
+        $taskTypes = $this->taskType->allTypes();
 
         $this->load->view('header', [
             'title' => $this->title
         ]);
         $this->load->view('tasks/create', [
-            'types' => $types,
+            'types' => $taskTypes,
             'levels' => $levels,
             'tasks' => $tasks,
             'users' => $users
@@ -67,7 +74,7 @@ class Tasks extends CI_Controller
     {
         authAccess();
 
-        $typeKeys = implode(',', array_keys(TaskModel::getTypes()));
+        $typeKeys = implode(',', array_column($this->taskType->allTypes(), 'id'));
         $levelKeys = implode(',', array_keys(TaskModel::getLevels()));
         $userKeys = implode(',', array_column($this->user->getUserList(), 'id'));
 
@@ -75,7 +82,6 @@ class Tasks extends CI_Controller
         $this->form_validation->set_rules('type', 'Type', 'trim|required|numeric|in_list[' . $typeKeys . ']');
         $this->form_validation->set_rules('level', 'Importance Level', 'trim|required|numeric|in_list[' . $levelKeys . ']');
         $this->form_validation->set_rules('assigned_to', 'Assigned To', 'trim|required|numeric|in_list[' . $userKeys . ']');
-        $this->form_validation->set_rules('note', 'Note', 'trim|required');
         $this->form_validation->set_rules('tag_clients', 'Tag Clients', 'is_own_ids[jobs, Clients]');
         $this->form_validation->set_rules('tag_users', 'Tag Users', 'is_own_ids[users, Users]');
         $this->form_validation->set_rules('predecessor_tasks', 'Predecessor Tasks', 'is_own_ids[tasks, Tasks]');
@@ -89,15 +95,21 @@ class Tasks extends CI_Controller
                 'assigned_to' => $taskData['assigned_to']
             ]);
             if ($insert) {
-                $errors = '';
-                $note = $taskData['note'];
+                $assignedUser = $this->user->getUserById($taskData['assigned_to']);
+                $this->notify = new Notify();
+                $this->notify->sendTaskAssignNotification($assignedUser->email_id, $insert, $taskData['name']);
 
-                $noteInsert = $this->task_notes->insert([
-                    'note' => nl2br($note),
-                    'task_id' => $insert
-                ]);
-                if (!$noteInsert) {
-                    $errors .= '<p>Unable to add Note.</p>';
+                $errors = '';
+                if (!empty(trim($taskData['note']))) {
+                    $note = $taskData['note'];
+
+                    $noteInsert = $this->task_notes->insert([
+                        'note' => nl2br($note),
+                        'task_id' => $insert
+                    ]);
+                    if (!$noteInsert) {
+                        $errors .= '<p>Unable to add Note.</p>';
+                    }
                 }
 
                 // $jobs = $taskData['tag_clients'];
@@ -124,6 +136,18 @@ class Tasks extends CI_Controller
                     $usersInsert = $this->task_user_tags->insertByUserArr($users, $insert);
                     if (!$usersInsert) {
                         $errors .= '<p>Unable to tag Users.</p>';
+                    }
+
+                    $userEmailIds = $this->user->getEmailIdArrByUserIds($users);
+                    foreach ($userEmailIds as $userEmailId) {
+                        $this->notify = new Notify();
+                        $this->notify->sendTaskTagNotification($userEmailId, $insert, $taskData['name'], $taskData['note'], base_url('task/' . $insert));
+                    }
+
+                    $phoneNos = $this->user->getPhoneArrByUserIds($users);
+                    foreach ($phoneNos as $phoneNo) {
+                        $this->notify = new Notify();
+                        $this->notify->sendTaskTagNotificationMob($phoneNo, $insert, $taskData['name'], $taskData['note'], base_url('task/' . $insert));
                     }
                 }
 
@@ -179,11 +203,11 @@ class Tasks extends CI_Controller
         $task = $this->task->getTaskById($id);
         if ($task) {
             // >>>>> TEAM CHANGES >>>>> check if current user has access to this task
-            $types = TaskModel::getTypes();
             $levels = TaskModel::getLevels();
             $status = TaskModel::getStatus();
             $tasks = $this->task->getTaskListExcept($id);
             $users = $this->user->getUserList();
+            $taskTypes = $this->taskType->allTypes();
             // $jobs = false;
             $tag_users = $this->task_user_tags->getUsersByTaskId($id);
             $predec_tasks = $this->task_predecessor->getTasksByTaskId($id);
@@ -192,7 +216,7 @@ class Tasks extends CI_Controller
             ]);
             $this->load->view('tasks/edit', [
                 'task' => $task,
-                'types' => $types,
+                'types' => $taskTypes,
                 'levels' => $levels,
                 'tasks' => $tasks,
                 'users' => $users,
@@ -215,7 +239,7 @@ class Tasks extends CI_Controller
         if ($task) {
             // >>>>> TEAM CHANGES >>>>> check if current user has access to this task
 
-            $typeKeys = implode(',', array_keys(TaskModel::getTypes()));
+            $typeKeys = implode(',', array_column($this->taskType->allTypes(), 'id'));
             $levelKeys = implode(',', array_keys(TaskModel::getLevels()));
             $userKeys = implode(',', array_column($this->user->getUserList(), 'id'));
             $statusKeys = implode(',', array_keys(TaskModel::getStatus()));
@@ -239,6 +263,12 @@ class Tasks extends CI_Controller
                     'status' => $taskData['status']
                 ]);
                 if ($update) {
+                    if ($task->assigned_to != $taskData['assigned_to']) {
+                        $assignedUser = $this->user->getUserById($taskData['assigned_to']);
+                        $this->notify = new Notify();
+                        $this->notify->sendTaskAssignNotification($assignedUser->email_id, $task->id, $task->name);
+                    }
+
                     $errors = '';
 
                     // $jobs = $taskData['tag_clients'];
@@ -264,6 +294,12 @@ class Tasks extends CI_Controller
                         $usersInsert = $this->task_user_tags->insertByUserArr($users_insert, $id);
                         if (!$usersInsert) {
                             $errors .= '<p>Unable to tag new Users.</p>';
+                        }
+
+                        $userEmailIds = $this->user->getEmailIdArrByUserIds($users_insert);
+                        foreach ($userEmailIds as $userEmailId) {
+                            $this->notify = new Notify();
+                            $this->notify->sendTaskTagNotification($userEmailId, $task->id, $task->name, '', base_url('task/' . $id));
                         }
                     }
                     $users_remove = array_diff($old_tag_users, $users);
@@ -296,20 +332,17 @@ class Tasks extends CI_Controller
                     if (!empty($errors)) {
                         $this->session->set_flashdata('errors', $errors);
                     }
-
                     redirect('task/' . $id);
                 } else {
                     $this->session->set_flashdata('errors', '<p>Unable to Update Task.</p>');
-                    redirect('task/' . $id . '/edit');
                 }
             } else {
                 $this->session->set_flashdata('errors', validation_errors());
-                redirect('task/' . $id . '/edit');
             }
         } else {
             $this->session->set_flashdata('errors', '<p>Invalid Request.</p>');
-            redirect('tasks');
         }
+        redirect('tasks');
     }
 
     public function show($id)
@@ -323,10 +356,20 @@ class Tasks extends CI_Controller
             $users = $this->user->getUserList();
             $tag_users = $this->task_user_tags->getUsersByTaskId($id);
             $predec_tasks = $this->task_predecessor->getTasksByTaskId($id);
+            // >>>>> TEAM CHANGES >>>>> check if current user has access to this task
+            $levels = TaskModel::getLevels();
+            $status = TaskModel::getStatus();
+            $tasks = $this->task->getTaskListExcept($id);
+            $taskTypes = $this->taskType->allTypes();
+            // $jobs = false;
             $this->load->view('header', [
                 'title' => $this->title
             ]);
             $this->load->view('tasks/show', [
+                'types' => $taskTypes,
+                'levels' => $levels,
+                'tasks' => $tasks,
+                'status' => $status,
                 'task' => $task,
                 'notes' => $notes,
                 'jobs' => $jobs,
@@ -364,18 +407,84 @@ class Tasks extends CI_Controller
                         $userIds = $this->user->getUserIdArrByUserNames($usernames);
                     }
 
-                    $old_tag_users = $this->task_user_tags->getUsersByTaskId($id);
-                    $old_tag_users = ($old_tag_users) ? array_column($old_tag_users, 'id') : [];
-                    $users = array_unique(array_merge($old_tag_users, $userIds));
-                    $users_insert = array_diff($users, $old_tag_users);
+                    // $old_tag_users = $this->task_user_tags->getUsersByTaskId($id);
+                    // $old_tag_users = ($old_tag_users) ? array_column($old_tag_users, 'id') : [];
+                    // $users = array_unique(array_merge($old_tag_users, $userIds));
+                    // $users_insert = array_diff($users, $old_tag_users);
+                    $users_insert = $userIds;
                     if (count($users_insert)) {
                         $usersInsert = $this->task_user_tags->insertByUserArr($users_insert, $id);
                         if (!$usersInsert) {
                             $this->session->set_flashdata('errors', '<p>Unable to tag new Users.</p>');
                         }
+
+                        $userEmailIds = $this->user->getEmailIdArrByUserIds($users_insert);
+                        foreach ($userEmailIds as $userEmailId) {
+                            $this->notify = new Notify();
+                            $this->notify->sendTaskTagNotification($userEmailId, $task->id, $task->name, $noteData['note'], base_url('task/' . $id));
+                        }
+
+                        $phoneNos = $this->user->getPhoneArrByUserIds($users_insert);
+                        foreach ($phoneNos as $phoneNo) {
+                            $this->notify = new Notify();
+                            $this->notify->sendTaskTagNotificationMob($phoneNo, $task->id, $task->name, $noteData['note'], base_url('task/' . $id));
+                        }
                     }
                 } else {
                     $this->session->set_flashdata('errors', '<p>Unable to add Note.</p>');
+                }
+            } else {
+                $this->session->set_flashdata('errors', validation_errors());
+            }
+            redirect('task/' . $id);
+        } else {
+            $this->session->set_flashdata('errors', '<p>Invalid Request.</p>');
+            redirect('tasks');
+        }
+    }
+
+    public function updateNote($id, $noteId)
+    {
+        authAccess();
+
+        $task = $this->task->getTaskById($id);
+        if ($task) {
+            $this->form_validation->set_rules('note', 'Note', 'trim|required');
+
+            if ($this->form_validation->run() == TRUE) {
+                $noteData = $this->input->post();
+                $update = $this->task_notes->update($noteId, [
+                    'note' => nl2br($noteData['note'])
+                ]);
+                if ($update) {
+                    // $userIds = [];
+                    // if (preg_match_all('~(@\w+)~', $noteData['note'], $matches, PREG_PATTERN_ORDER)) {
+                    //     $usernames = array_map(function ($val) {
+                    //         return ltrim($val, '@');
+                    //     }, $matches[1]);
+                    //     $userIds = $this->user->getUserIdArrByUserNames($usernames);
+                    // }
+                    // $users_insert = $userIds;
+                    // if (count($users_insert)) {
+                    //     $usersInsert = $this->task_user_tags->insertByUserArr($users_insert, $id);
+                    //     if (!$usersInsert) {
+                    //         $this->session->set_flashdata('errors', '<p>Unable to tag new Users.</p>');
+                    //     }
+
+                    //     $userEmailIds = $this->user->getEmailIdArrByUserIds($users_insert);
+                    //     foreach ($userEmailIds as $userEmailId) {
+                    //         $this->notify = new Notify();
+                    //         $this->notify->sendTaskTagNotification($userEmailId, $task->id, $task->name);
+                    //     }
+
+                    //     $userMobEmailIds = $this->user->getMobEmailIdArrByUserIds($users_insert);
+                    //     foreach ($userMobEmailIds as $userMobEmailId) {
+                    //         $this->notify = new Notify();
+                    //         $this->notify->sendTaskTagNotificationMob($userMobEmailId, $task->id, $task->name);
+                    //     }
+                    // }
+                } else {
+                    $this->session->set_flashdata('errors', '<p>Unable to Update Note.</p>');
                 }
             } else {
                 $this->session->set_flashdata('errors', validation_errors());

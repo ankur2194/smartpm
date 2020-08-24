@@ -7,9 +7,11 @@ class Dashboard extends CI_Controller
 	{
 		parent::__construct();
 
-		$this->load->model(['LeadModel', 'TaskModel']);
+		$this->load->model(['LeadModel', 'TaskModel', 'DashboardBoxNameModel', 'ActivityLogsModel']);
 		$this->lead = new LeadModel();
 		$this->task = new TaskModel();
+		$this->dashboardBoxName = new DashboardBoxNameModel();
+		$this->activityLogs = new ActivityLogsModel();
 	}
 
 	public function index()
@@ -18,6 +20,7 @@ class Dashboard extends CI_Controller
 
 		$leadStatusCount = $this->lead->getDashboardStatusCount();
 		$taskStatusCount = $this->task->getDashboardStatusCount();
+		$boxNames = $this->dashboardBoxName->allNames();
 
 		$this->load->view('header', ['title' => 'Dashboard']);
 		$this->load->view('dashboard/index', [
@@ -28,17 +31,22 @@ class Dashboard extends CI_Controller
 			'estimateBidLeads' => $leadStatusCount->needs_estimate,
 			'estimateSentLeads' => $leadStatusCount->estimate_sent,
 			'readyToSignLeads' => $leadStatusCount->ready_to_sign,
-			'worryToLoaseLeads' => $leadStatusCount->worry_to_lose,
+			'coldLeads' => $leadStatusCount->cold,
 			'postponedLeads' => $leadStatusCount->postponed,
+			'lostLeads' => $leadStatusCount->lostLeads,
+			'signedJobs' => $leadStatusCount->signed,
 			'productionJobs' => $leadStatusCount->production,
 			'completedJobs' => $leadStatusCount->completed,
 			'closedJobs' => $leadStatusCount->closed,
 			'archiveJobs' => $leadStatusCount->archive,
+			'punchList' => $leadStatusCount->punchList,
 			'createdTasks' => $taskStatusCount->created,
 			'workingTasks' => $taskStatusCount->working,
 			'stuckTasks' => $taskStatusCount->stuck,
 			'holdTasks' => $taskStatusCount->hold,
-			'completedTasks' => $taskStatusCount->completed
+			'completedTasks' => $taskStatusCount->completed,
+			'boxNames' => $boxNames,
+			'aLogs' => $this->activityLogs->getLast50()
 		]);
 		$this->load->view('footer');
 	}

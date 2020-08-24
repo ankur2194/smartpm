@@ -13,13 +13,15 @@ class LeadModel extends CI_Model
         4 => 'Needs Estimate / Bid',
         5 => 'Estimate Sent',
         6 => 'Ready to Sign / Verbal Go',
-        7 => 'Signed Insurance Contract',
-        8 => 'Signed Cash Contract',
-        9 => 'Signed Labor Only',
-        10 => 'Signed Finance Job',
-        11 => 'Worry to Lose',
-        12 => 'Postponed',
-        13 => 'Dead / Lost'
+        7 => 'Signed',
+        8 => 'In Production',
+        9 => 'Completed',
+        10 => 'Closed',
+        11 => 'Archive',
+        12 => 'Cold',
+        13 => 'Postponed',
+        14 => 'Dead / Lost',
+        15 => 'Punch List'
     ];
     // private static $signedStage = [
     //     0 => 'Ordering / Buy Out',
@@ -37,241 +39,178 @@ class LeadModel extends CI_Model
         4 => 'Industrial',
         5 => 'Repair'
     ];
+    private static $category = [
+        0 => 'Insurance Jobs',
+        1 => 'Cash Jobs',
+        2 => 'Labor Only Jobs',
+        3 => 'Financial Jobs'
+    ];
+    private static $dumpsterStatus = [
+        1 => 'Ordered',
+        2 => 'Delivered',
+        3 => 'Removed'
+    ];
+    private static $materialStatus = [
+        1 => 'Ordered',
+        2 => 'Delivered',
+        3 => 'Removed'
+    ];
+    private static $laborStatus = [
+        1 => 'Scheduled',
+        2 => 'Complete',
+        3 => 'Approved'
+    ];
+    private static $permitStatus = [
+        1 => 'Applied',
+        2 => 'Received',
+        3 => 'Posted'
+    ];
 
-    public function allLeads($start = 0, $limit = 10)
-    {
-        $this->db->from($this->table);
-        $this->db->where([
-            'is_deleted' => FALSE,
-            'signed_stage' => 0
-        ]);
-        $this->db->where_in('status', [0, 1, 2, 3, 4, 5, 6, 12, 13]);
-        $this->db->order_by('created_at', 'ASC');
-        $this->db->limit($limit, $start);
-        $query = $this->db->get();
-        return $query->result();
-    }
-
-    public function getLeadsCount()
-    {
-        $this->db->where([
-            'is_deleted' => FALSE,
-            'signed_stage' => 0
-        ]);
-        $this->db->where_in('status', [0, 1, 2, 3, 4, 5, 6, 11, 12]);
-        return $this->db->count_all_results($this->table);
-    }
-
-    public function allJobs($start = 0, $limit = 10)
+    public function allLeads()
     {
         $this->db->from($this->table);
         $this->db->where([
             'is_deleted' => FALSE
         ]);
-        $this->db->order_by('created_at', 'ASC');
-        $this->db->limit($limit, $start);
+        $this->db->where_in('status', [0, 1, 2, 3, 4, 5, 6, 13, 14]);
+        $this->db->order_by('created_at', 'DESC');
         $query = $this->db->get();
         return $query->result();
     }
 
-    public function getJobsCount()
+    public function allLeadsByStatus($status)
     {
+        if (!isset(self::$status[$status])) {
+            show_404();
+        }
+
+        $this->db->from($this->table);
+        $this->db->where([
+            'is_deleted' => FALSE,
+            'status' => $status
+        ]);
+        $this->db->order_by('created_at', 'DESC');
+        $query = $this->db->get();
+        return $query->result();
+    }
+
+    public function allJobs()
+    {
+        $this->db->from($this->table);
         $this->db->where([
             'is_deleted' => FALSE
         ]);
-        return $this->db->count_all_results($this->table);
+        $this->db->order_by('created_at', 'DESC');
+        $query = $this->db->get();
+        return $query->result();
     }
 
-    public function allCashJobs($start = 0, $limit = 10)
+    public function allSignedJobs()
+    {
+        $this->db->from($this->table);
+        $this->db->where([
+            'status' => 7,
+            'is_deleted' => FALSE
+        ]);
+        $this->db->order_by('created_at', 'DESC');
+        $query = $this->db->get();
+        return $query->result();
+    }
+
+    public function allCashJobs()
     {
         $this->db->from($this->table);
         $this->db->where([
             'is_deleted' => FALSE,
-            'signed_stage' => 0,
+            'category' => 1
+        ]);
+        $this->db->order_by('created_at', 'DESC');
+        $query = $this->db->get();
+        return $query->result();
+    }
+
+    public function allInsuranceJobs()
+    {
+        $this->db->from($this->table);
+        $this->db->where([
+            'is_deleted' => FALSE,
+            'category' => 0
+        ]);
+        $this->db->order_by('created_at', 'DESC');
+        $query = $this->db->get();
+        return $query->result();
+    }
+
+    public function allLaborOnlyJobs()
+    {
+        $this->db->from($this->table);
+        $this->db->where([
+            'is_deleted' => FALSE,
+            'category' => 2
+        ]);
+        $this->db->order_by('created_at', 'DESC');
+        $query = $this->db->get();
+        return $query->result();
+    }
+
+    public function allFinancialJobs()
+    {
+        $this->db->from($this->table);
+        $this->db->where([
+            'is_deleted' => FALSE,
+            'category' => 3
+        ]);
+        $this->db->order_by('created_at', 'DESC');
+        $query = $this->db->get();
+        return $query->result();
+    }
+
+    public function allProductionJobs()
+    {
+        $this->db->from($this->table);
+        $this->db->where([
+            'is_deleted' => FALSE,
             'status' => 8
         ]);
-        $this->db->order_by('created_at', 'ASC');
-        $this->db->limit($limit, $start);
+        $this->db->order_by('created_at', 'DESC');
         $query = $this->db->get();
         return $query->result();
     }
 
-    public function getCashJobsCount()
-    {
-        $this->db->where([
-            'is_deleted' => FALSE,
-            'signed_stage' => 0,
-            'status' => 8
-        ]);
-        return $this->db->count_all_results($this->table);
-    }
-
-    public function allInsuranceJobs($start = 0, $limit = 10)
+    public function allCompletedJobs()
     {
         $this->db->from($this->table);
         $this->db->where([
             'is_deleted' => FALSE,
-            'signed_stage' => 0,
-            'status' => 7
-        ]);
-        $this->db->order_by('created_at', 'ASC');
-        $this->db->limit($limit, $start);
-        $query = $this->db->get();
-        return $query->result();
-    }
-
-    public function getInsuranceJobsCount()
-    {
-        $this->db->where([
-            'is_deleted' => FALSE,
-            'signed_stage' => 0,
-            'status' => 7
-        ]);
-        return $this->db->count_all_results($this->table);
-    }
-
-    public function allLaborOnlyJobs($start = 0, $limit = 10)
-    {
-        $this->db->from($this->table);
-        $this->db->where([
-            'is_deleted' => FALSE,
-            'signed_stage' => 0,
             'status' => 9
         ]);
-        $this->db->order_by('created_at', 'ASC');
-        $this->db->limit($limit, $start);
+        $this->db->order_by('created_at', 'DESC');
         $query = $this->db->get();
         return $query->result();
     }
 
-    public function getLaborOnlyJobsCount()
-    {
-        $this->db->where([
-            'is_deleted' => FALSE,
-            'signed_stage' => 0,
-            'status' => 9
-        ]);
-        return $this->db->count_all_results($this->table);
-    }
-
-    public function allFinancialJobs($start = 0, $limit = 10)
+    public function allClosedJobs()
     {
         $this->db->from($this->table);
         $this->db->where([
             'is_deleted' => FALSE,
-            'signed_stage' => 0,
             'status' => 10
         ]);
-        $this->db->order_by('created_at', 'ASC');
-        $this->db->limit($limit, $start);
+        $this->db->order_by('created_at', 'DESC');
         $query = $this->db->get();
         return $query->result();
     }
 
-    public function getFinancialJobsCount()
-    {
-        $this->db->where([
-            'is_deleted' => FALSE,
-            'signed_stage' => 0,
-            'status' => 10
-        ]);
-        return $this->db->count_all_results($this->table);
-    }
-
-    public function allProductionJobs($start = 0, $limit = 10)
+    public function allArchivedJobs()
     {
         $this->db->from($this->table);
         $this->db->where([
             'is_deleted' => FALSE,
-            'signed_stage' => 1
+            'status' => 11
         ]);
-        $this->db->where_in('status', [7, 8, 9, 10]);
-        $this->db->order_by('created_at', 'ASC');
-        $this->db->limit($limit, $start);
+        $this->db->order_by('created_at', 'DESC');
         $query = $this->db->get();
         return $query->result();
-    }
-
-    public function getProductionJobsCount()
-    {
-        $this->db->where([
-            'is_deleted' => FALSE,
-            'signed_stage' => 1
-        ]);
-        $this->db->where_in('status', [7, 8, 9, 10]);
-        return $this->db->count_all_results($this->table);
-    }
-
-    public function allCompletedJobs($start = 0, $limit = 10)
-    {
-        $this->db->from($this->table);
-        $this->db->where([
-            'is_deleted' => FALSE,
-            'signed_stage' => 2
-        ]);
-        $this->db->where_in('status', [7, 8, 9, 10]);
-        $this->db->order_by('created_at', 'ASC');
-        $this->db->limit($limit, $start);
-        $query = $this->db->get();
-        return $query->result();
-    }
-
-    public function getCompletedJobsCount()
-    {
-        $this->db->where([
-            'is_deleted' => FALSE,
-            'signed_stage' => 2
-        ]);
-        $this->db->where_in('status', [7, 8, 9, 10]);
-        return $this->db->count_all_results($this->table);
-    }
-
-    public function allClosedJobs($start = 0, $limit = 10)
-    {
-        $this->db->from($this->table);
-        $this->db->where([
-            'is_deleted' => FALSE,
-            'signed_stage' => 3
-        ]);
-        $this->db->where_in('status', [7, 8, 9, 10]);
-        $this->db->order_by('created_at', 'ASC');
-        $this->db->limit($limit, $start);
-        $query = $this->db->get();
-        return $query->result();
-    }
-
-    public function getClosedJobsCount()
-    {
-        $this->db->where([
-            'is_deleted' => FALSE,
-            'signed_stage' => 3
-        ]);
-        $this->db->where_in('status', [7, 8, 9, 10]);
-        return $this->db->count_all_results($this->table);
-    }
-
-    public function allArchivedJobs($start = 0, $limit = 10)
-    {
-        $this->db->from($this->table);
-        $this->db->where([
-            'is_deleted' => FALSE,
-            'signed_stage' => 4
-        ]);
-        $this->db->where_in('status', [7, 8, 9, 10]);
-        $this->db->order_by('created_at', 'ASC');
-        $this->db->limit($limit, $start);
-        $query = $this->db->get();
-        return $query->result();
-    }
-
-    public function getArchivedJobsCount()
-    {
-        $this->db->where([
-            'is_deleted' => FALSE,
-            'signed_stage' => 4
-        ]);
-        $this->db->where_in('status', [7, 8, 9, 10]);
-        return $this->db->count_all_results($this->table);
     }
 
     public function getLeadList($select = "id, CONCAT(firstname, ' ', lastname) AS name")
@@ -285,6 +224,7 @@ class LeadModel extends CI_Model
 
     public function getLeadById($id)
     {
+        $this->db->select("jobs.*, (SELECT name FROM client_lead_source WHERE id=jobs.lead_source) AS lead_source_name, (SELECT name FROM client_classification WHERE id=jobs.classification) AS classification_name");
         $this->db->where([
             'id' => $id
         ]);
@@ -325,18 +265,50 @@ class LeadModel extends CI_Model
             COUNT(IF(status=4, 1, NULL)) as needs_estimate,
             COUNT(IF(status=5, 1, NULL)) as estimate_sent,
             COUNT(IF(status=6, 1, NULL)) as ready_to_sign,
-            COUNT(IF(status=11, 1, NULL)) as worry_to_lose,
-            COUNT(IF(status=12, 1, NULL)) as postponed,
-            COUNT(IF(signed_stage=1, (CASE WHEN status=7 THEN 1 WHEN status=8 THEN 1 WHEN status=9 THEN 1 ELSE NULL END), NULL)) as production,
-            COUNT(IF(signed_stage=2, (CASE WHEN status=7 THEN 1 WHEN status=8 THEN 1 WHEN status=9 THEN 1 ELSE NULL END), NULL)) as completed,
-            COUNT(IF(signed_stage=3, (CASE WHEN status=7 THEN 1 WHEN status=8 THEN 1 WHEN status=9 THEN 1 ELSE NULL END), NULL)) as closed,
-            COUNT(IF(signed_stage=4, (CASE WHEN status=7 THEN 1 WHEN status=8 THEN 1 WHEN status=9 THEN 1 ELSE NULL END), NULL)) as archive
+            COUNT(IF(status=7, 1, NULL)) as signed,
+            COUNT(IF(status=8, 1, NULL)) as production,
+            COUNT(IF(status=9, 1, NULL)) as completed,
+            COUNT(IF(status=10, 1, NULL)) as closed,
+            COUNT(IF(status=11, 1, NULL)) as archive,
+            COUNT(IF(status=12, 1, NULL)) as cold,
+            COUNT(IF(status=13, 1, NULL)) as postponed,
+            COUNT(IF(status=14, 1, NULL)) as lostLeads,
+            COUNT(IF(status=15, 1, NULL)) as punchList
         ", FALSE);
 		$this->db->from($this->table);
         $this->db->where('is_deleted', FALSE);
 		$query = $this->db->get();
         $result = $query->first_row();
         return $result ? $result : false;
+    }
+
+    public function search($keywords)
+    {
+        if (count($keywords) <= 0) {
+            return [];
+        }
+        $this->db->select("id, firstname, lastname, address, city, state, zip, phone1, phone2, email, status, category");
+        $this->db->from($this->table);
+        $this->db->where([
+            'is_deleted' => FALSE
+        ]);
+        $this->db->group_start();
+        foreach ($keywords as $k) {
+            $this->db->or_like('id', $k);
+            $this->db->or_like('firstname', $k);
+            $this->db->or_like('lastname', $k);
+            $this->db->or_like('address', $k);
+            $this->db->or_like('city', $k);
+            $this->db->or_like('state', $k);
+            $this->db->or_like('zip', $k);
+            $this->db->or_like('phone1', $k);
+            $this->db->or_like('phone2', $k);
+            $this->db->or_like('email', $k);
+        }
+        $this->db->group_end();
+        $this->db->order_by('created_at', 'DESC');
+        $query = $this->db->get();
+        return $query->result();
     }
 
     /**
@@ -360,5 +332,55 @@ class LeadModel extends CI_Model
     public static function getType()
     {
         return self::$type;
+    }
+
+    public static function categoryToStr($id)
+    {
+        return isset(self::$category[$id]) ? self::$category[$id] : $id;
+    }
+
+    public static function getCategory()
+    {
+        return self::$category;
+    }
+
+    public static function dumpsterStatusToStr($id)
+    {
+        return isset(self::$dumpsterStatus[$id]) ? self::$dumpsterStatus[$id] : $id;
+    }
+
+    public static function getDumpsterStatus()
+    {
+        return self::$dumpsterStatus;
+    }
+
+    public static function materialStatusToStr($id)
+    {
+        return isset(self::$materialStatus[$id]) ? self::$materialStatus[$id] : $id;
+    }
+
+    public static function getMaterialStatus()
+    {
+        return self::$materialStatus;
+    }
+
+    public static function laborStatusToStr($id)
+    {
+        return isset(self::$laborStatus[$id]) ? self::$laborStatus[$id] : $id;
+    }
+
+    public static function getLaborStatus()
+    {
+        return self::$laborStatus;
+    }
+
+    public static function permitStatusToStr($id)
+    {
+        return isset(self::$permitStatus[$id]) ? self::$permitStatus[$id] : $id;
+    }
+
+    public static function getPermitStatus()
+    {
+        return self::$permitStatus;
     }
 }

@@ -11,31 +11,23 @@ class Teams extends CI_Controller
 		parent::__construct();
 
 		$this->load->model(['TeamModel', 'UserModel', 'TeamUserMapModel']);
-		$this->load->library(['pagination', 'form_validation']);
+		$this->load->library(['form_validation']);
 
 		$this->team = new TeamModel();
 		$this->user = new UserModel();
 		$this->team_user_map = new TeamUserMapModel();
 	}
 
-	public function index($start = 0)
+	public function index()
 	{
 		authAccess();
 
-		$limit = 10;
-		$pagiConfig = [
-			'base_url' => base_url('teams'),
-			'total_rows' => $this->team->getCount(),
-			'per_page' => $limit
-		];
-		$this->pagination->initialize($pagiConfig);
-		$teams = $this->team->allTeams($start, $limit);
+		$teams = $this->team->allTeams();
 		$this->load->view('header', [
 			'title' => $this->title
 		]);
 		$this->load->view('teams/index', [
-			'teams' => $teams,
-			'pagiLinks' => $this->pagination->create_links()
+			'teams' => $teams
 		]);
 		$this->load->view('footer');
 	}
@@ -104,7 +96,7 @@ class Teams extends CI_Controller
 	public function edit($id)
 	{
 		authAccess();
-		
+
 		$team = $this->team->getTeamById($id);
 		if ($team) {
 			$members = $this->team_user_map->getUsersByTeamId($id);
@@ -128,7 +120,7 @@ class Teams extends CI_Controller
 	public function update($id)
 	{
 		authAccess();
-		
+
 		$team = $this->team->getTeamById($id);
 		if ($team) {
 			$userKeys = implode(',', array_column($this->user->getUserList(), 'id'));
@@ -171,34 +163,33 @@ class Teams extends CI_Controller
 					if (!empty($errors)) {
 						$this->session->set_flashdata('errors', $errors);
 					}
-
-					redirect('team/' . $id);
 				} else {
 					$this->session->set_flashdata('errors', '<p>Unable to Update Team.</p>');
-					redirect('user/' . $id . '/edit');
 				}
 			} else {
 				$this->session->set_flashdata('errors', validation_errors());
-				redirect('team/' . $id . '/edit');
 			}
 		} else {
 			$this->session->set_flashdata('errors', '<p>Invalid Request.</p>');
-			redirect('teams');
 		}
+		redirect('team/' . $id);
 	}
 
 	public function show($id)
 	{
 		authAccess();
-		
+
 		$team = $this->team->getTeamById($id);
 		if ($team) {
+			$users = $this->user->getUserList();
 			$members = $this->team_user_map->getUsersByTeamId($id);
+
 			$this->load->view('header', [
 				'title' => $this->title
 			]);
 			$this->load->view('teams/show', [
 				'team' => $team,
+				'users' => $users,
 				'members' => $members
 			]);
 			$this->load->view('footer');
@@ -211,7 +202,7 @@ class Teams extends CI_Controller
 	public function delete($id)
 	{
 		authAccess();
-		
+
 		$team = $this->team->getTeamById($id);
 		if ($team) {
 			$this->team_user_map->deleteRelated($id);

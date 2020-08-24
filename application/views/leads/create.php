@@ -1,6 +1,24 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
-?> <div class="container-fluid">
+?><div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <?php
+            if (!empty($this->session->flashdata('errors'))) {
+                echo '<div class="alert alert-danger fade in alert-dismissable" title="Error:"><a href="#" class="close" data-dismiss="alert" aria-label="close" title="close">×</a>';
+                echo $this->session->flashdata('errors');
+                echo '</div>';
+            }
+            ?>
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="row page-header-buttons">
+        <div class="col-md-12">
+            <a href="<?= base_url('leads') ?>" class="btn btn-info btn-fill"><i class="fa fa-chevron-left" aria-hidden="true"></i>&nbsp; Back</a>
+        </div>
+    </div>
     <div class="row">
         <div class="col-md-8">
             <div class="card">
@@ -10,18 +28,11 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
                 <div class="content">
                     <div class="row">
-                        <div class="col-md-12">
-                            <?php
-                            if (!empty($this->session->flashdata('errors'))) {
-                                echo '<div class="alert alert-danger fade in alert-dismissable" title="Error:"><a href="#" class="close" data-dismiss="alert" aria-label="close" title="close">×</a>';
-                                echo $this->session->flashdata('errors');
-                                echo '</div>';
-                            }
-                            ?>
+                        <div id="validation-errors" class="col-md-12">
                         </div>
                     </div>
 
-                    <?= form_open('lead/store', array('method' => 'post')) ?>
+                    <?= form_open('lead/store', array('id' => 'lead_create', 'method' => 'post', 'novalidate' => true)) ?>
 
                     <div class="row">
                         <div class="col-md-6">
@@ -41,8 +52,17 @@ defined('BASEPATH') or exit('No direct script access allowed');
                     <div class="row">
                         <div class="col-md-12">
                             <div class="form-group">
-                                <label>Street Address<span class="red-mark">*</span></label>
-                                <input class="form-control" placeholder="Address" name="address" type="text">
+                                <label>Address Line 1<span class="red-mark">*</span></label>
+                                <input class="form-control" placeholder="Address Line 1" name="address" type="text">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label>Address Line 2</label>
+                                <input class="form-control" placeholder="Address Line 2" name="address_2" type="text">
                             </div>
                         </div>
                     </div>
@@ -69,22 +89,36 @@ defined('BASEPATH') or exit('No direct script access allowed');
                     </div>
 
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Cell Phone<span class="red-mark">*</span></label>
                                 <input class="form-control" placeholder="Phone 1" name="phone1" type="text">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Home Phone</label>
                                 <input class="form-control" placeholder="Phone 2" name="phone2" type="text">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Email</label>
                                 <input class="form-control" name="email" placeholder="Email" type="email">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Lead Source</label>
+                                <select name="lead_source" class="form-control">
+                                    <option value="" disabled selected>Select Lead Source</option>
+                                    <?php foreach ($leadSources as $leadSource) {
+                                        echo '<option value="' . $leadSource->id . '">' . $leadSource->name . '</option>';
+                                    } ?>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -127,8 +161,95 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
                     <div class="row">
                         <div class="col-md-12">
+                            <div>
+                                <h4 class="title" style="float: left;">Contract Status<span class="red-mark">*</span></h4>
+                                <div class="clearfix"></div>
+                                <div>
+                                    <select class="form-control" id="lead" name="status">
+                                        <option value="" disabled selected>Select Contract Status</option>
+                                        <optgroup label="Leads">
+                                            <option value="0">New</option>
+                                            <option value="1">Appointment Scheduled</option>
+                                            <option value="2">Needs Follow Up Call</option>
+                                            <option value="3">Needs Site Visit</option>
+                                            <option value="4">Needs Estimate / Bid</option>
+                                        </optgroup>
+                                        <optgroup label="Prospects">
+                                            <option value="5">Estimate Sent</option>
+                                            <option value="6">Ready to Sign / Verbal Go</option>
+                                            <option value="12">Cold</option>
+                                            <option value="13">Postponed</option>
+                                            <option value="14">Dead / Lost</option>
+                                        </optgroup>
+                                        <optgroup label="Prospects">
+                                            <option value="7">Signed</option>
+                                            <option value="8">In Production</option>
+                                            <option value="9">Completed</option>
+                                            <option value="15">Punch List</option>
+                                            <option value="10">Closed</option>
+                                            <option value="11">Archive</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div>
+                                <h4 class="title" style="float: left;">Category<span class="red-mark">*</span></h4>
+                                <div class="clearfix"></div>
+                                <div>
+                                    <select class="form-control" id="category" name="category">
+                                        <option value="" disabled selected>Select Category</option>
+                                        <?php foreach ($lead_category_tags as $s_id => $s_tags) : ?>
+                                            <option value="<?= $s_id ?>"><?= $s_tags ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div>
+                                <h4 class="title" style="float: left;">Job Type<span class="red-mark">*</span></h4>
+                                <div class="clearfix"></div>
+                                <div>
+                                    <select class="form-control lead-status" id="job" name="type">
+                                        <option value="" disabled selected>Select Job Type</option>
+                                        <?php foreach ($job_type_tags as $j_id => $job) : ?>
+                                            <option value="<?= $j_id ?>"><?= $job ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div>
+                                <h4 class="title" style="float: left;">Classification<span class="red-mark">*</span></h4>
+                                <div class="clearfix"></div>
+                                <div>
+                                    <select class="form-control lead-status" id="job" name="classification">
+                                        <option value="" disabled selected>Select Classification</option>
+                                        <?php foreach ($classification as $clsf) : ?>
+                                            <option value="<?= $clsf->id ?>"><?= $clsf->name ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="clearfix" style="padding: 10px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
                             <div class="form-group">
-                                <a href="<?= base_url('leads') ?>" class="btn btn-info btn-fill">Back</a>
                                 <button type="submit" class="btn btn-info btn-fill pull-right">Create</button>
                             </div>
                         </div>
@@ -143,3 +264,5 @@ defined('BASEPATH') or exit('No direct script access allowed');
         </div>
     </div>
 </div>
+
+<script src="<?= base_url('assets/js/leads/create.js') ?>"></script>

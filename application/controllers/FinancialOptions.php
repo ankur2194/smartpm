@@ -9,9 +9,9 @@ class FinancialOptions extends CI_Controller
     {
         parent::__construct();
 
-        $this->load->model(['FinancialTypesModel', 'FinancialSubtypesModel', 'FinancialAccCodesModel', 'FinancialMethodsModel', 'FinancialBankAccsModel', 'StatesModel']);
+        $this->load->model(['FinancialSubtypesModel', 'FinancialAccCodesModel', 'FinancialMethodsModel', 'FinancialBankAccsModel', 'StatesModel']);
 
-        $this->type = new FinancialTypesModel();
+        // $this->type = new FinancialTypesModel();
         $this->subtype = new FinancialSubtypesModel();
         $this->accCode = new FinancialAccCodesModel();
         $this->method = new FinancialMethodsModel();
@@ -23,7 +23,7 @@ class FinancialOptions extends CI_Controller
     {
         authAccess();
 
-        $types = $this->type->allTypes();
+        // $types = $this->type->allTypes();
         $subtypes = $this->subtype->allSubtypes();
         $accCodes = $this->accCode->allAccCodes();
         $methods = $this->method->allMethods();
@@ -34,7 +34,7 @@ class FinancialOptions extends CI_Controller
             'title' => $this->title
         ]);
         $this->load->view('setting/financial-options', [
-            'types' => $types,
+            // 'types' => $types,
             'subtypes' => $subtypes,
             'accCodes' => $accCodes,
             'methods' => $methods,
@@ -44,33 +44,54 @@ class FinancialOptions extends CI_Controller
         $this->load->view('footer');
     }
 
-    public function insertType()
-    {
-        authAccess();
+    // public function insertType()
+    // {
+    //     authAccess();
 
-        $this->form_validation->set_rules('name', 'Name', 'trim|required');
+    //     $this->form_validation->set_rules('name', 'Name', 'trim|required');
 
-        if ($this->form_validation->run() == TRUE) {
-            $data = $this->input->post();
-            $insert = $this->type->insert([
-                'name' => $data['name']
-            ]);
-            if (!$insert) {
-                $this->session->set_flashdata('errors', '<p>Unable to Create Financial Option Type.</p>');
-            }
-        } else {
-            $this->session->set_flashdata('errors', validation_errors());
-        }
-        redirect('setting/financial-options');
-    }
+    //     if ($this->form_validation->run() == TRUE) {
+    //         $data = $this->input->post();
+    //         $insert = $this->type->insert([
+    //             'name' => $data['name']
+    //         ]);
+    //         if (!$insert) {
+    //             $this->session->set_flashdata('errors', '<p>Unable to Create Financial Option Type.</p>');
+    //         }
+    //     } else {
+    //         $this->session->set_flashdata('errors', validation_errors());
+    //     }
+    //     redirect('setting/financial-options');
+    // }
 
-    public function deleteType($id)
-    {
-        authAccess();
+    // public function updateType($id)
+    // {
+    //     authAccess();
 
-        $this->type->delete($id);
-        redirect('setting/financial-options');
-    }
+    //     $this->form_validation->set_rules('name', 'Name', 'trim|required');
+
+    //     if ($this->form_validation->run() == TRUE) {
+    //         $data = $this->input->post();
+    //         $update = $this->type->update($id, [
+    //             'name' => $data['name']
+    //         ]);
+    //         if (!$update) {
+    //             $this->session->set_flashdata('errors', '<p>Unable to Update Financial Option Type.</p>');
+    //         }
+    //     } else {
+    //         $this->session->set_flashdata('errors', validation_errors());
+    //     }
+
+    //     redirect('setting/financial-options');
+    // }
+
+    // public function deleteType($id)
+    // {
+    //     authAccess();
+
+    //     $this->type->delete($id);
+    //     redirect('setting/financial-options');
+    // }
 
     public function insertSubtype()
     {
@@ -89,6 +110,27 @@ class FinancialOptions extends CI_Controller
         } else {
             $this->session->set_flashdata('errors', validation_errors());
         }
+        redirect('setting/financial-options');
+    }
+
+    public function updateSubtype($id)
+    {
+        authAccess();
+
+        $this->form_validation->set_rules('name', 'Name', 'trim|required');
+
+        if ($this->form_validation->run() == TRUE) {
+            $data = $this->input->post();
+            $update = $this->subtype->update($id, [
+                'name' => $data['name']
+            ]);
+            if (!$update) {
+                $this->session->set_flashdata('errors', '<p>Unable to Update Financial Option Sub Type.</p>');
+            }
+        } else {
+            $this->session->set_flashdata('errors', validation_errors());
+        }
+
         redirect('setting/financial-options');
     }
 
@@ -112,11 +154,32 @@ class FinancialOptions extends CI_Controller
                 'name' => $data['name']
             ]);
             if (!$insert) {
-                $this->session->set_flashdata('errors', '<p>Unable to Create Financial Option Type.</p>');
+                $this->session->set_flashdata('errors', '<p>Unable to Create Financial Option Accounting Codes.</p>');
             }
         } else {
             $this->session->set_flashdata('errors', validation_errors());
         }
+        redirect('setting/financial-options');
+    }
+
+    public function updateAccCode($id)
+    {
+        authAccess();
+
+        $this->form_validation->set_rules('name', 'Name', 'trim|required');
+
+        if ($this->form_validation->run() == TRUE) {
+            $data = $this->input->post();
+            $update = $this->accCode->update($id, [
+                'name' => $data['name']
+            ]);
+            if (!$update) {
+                $this->session->set_flashdata('errors', '<p>Unable to Update Financial Option Accounting Codes.</p>');
+            }
+        } else {
+            $this->session->set_flashdata('errors', validation_errors());
+        }
+
         redirect('setting/financial-options');
     }
 
@@ -140,11 +203,32 @@ class FinancialOptions extends CI_Controller
                 'name' => $data['name']
             ]);
             if (!$insert) {
-                $this->session->set_flashdata('errors', '<p>Unable to Create Financial Option Type.</p>');
+                $this->session->set_flashdata('errors', '<p>Unable to Create Financial Option Method of Payment.</p>');
             }
         } else {
             $this->session->set_flashdata('errors', validation_errors());
         }
+        redirect('setting/financial-options');
+    }
+
+    public function updateMethod($id)
+    {
+        authAccess();
+
+        $this->form_validation->set_rules('name', 'Name', 'trim|required');
+
+        if ($this->form_validation->run() == TRUE) {
+            $data = $this->input->post();
+            $update = $this->method->update($id, [
+                'name' => $data['name']
+            ]);
+            if (!$update) {
+                $this->session->set_flashdata('errors', '<p>Unable to Update Financial Option Method of Payment.</p>');
+            }
+        } else {
+            $this->session->set_flashdata('errors', validation_errors());
+        }
+
         redirect('setting/financial-options');
     }
 
@@ -168,11 +252,32 @@ class FinancialOptions extends CI_Controller
                 'name' => $data['name']
             ]);
             if (!$insert) {
-                $this->session->set_flashdata('errors', '<p>Unable to Create Financial Option Type.</p>');
+                $this->session->set_flashdata('errors', '<p>Unable to Create Financial Option Bank Account.</p>');
             }
         } else {
             $this->session->set_flashdata('errors', validation_errors());
         }
+        redirect('setting/financial-options');
+    }
+
+    public function updateBankAcc($id)
+    {
+        authAccess();
+
+        $this->form_validation->set_rules('name', 'Name', 'trim|required');
+
+        if ($this->form_validation->run() == TRUE) {
+            $data = $this->input->post();
+            $update = $this->bankAcc->update($id, [
+                'name' => $data['name']
+            ]);
+            if (!$update) {
+                $this->session->set_flashdata('errors', '<p>Unable to Update Financial Option Bank Account.</p>');
+            }
+        } else {
+            $this->session->set_flashdata('errors', validation_errors());
+        }
+
         redirect('setting/financial-options');
     }
 
@@ -201,6 +306,27 @@ class FinancialOptions extends CI_Controller
         } else {
             $this->session->set_flashdata('errors', validation_errors());
         }
+        redirect('setting/financial-options');
+    }
+
+    public function updateState($id)
+    {
+        authAccess();
+
+        $this->form_validation->set_rules('name', 'Name', 'trim|required');
+
+        if ($this->form_validation->run() == TRUE) {
+            $data = $this->input->post();
+            $update = $this->state->update($id, [
+                'name' => $data['name']
+            ]);
+            if (!$update) {
+                $this->session->set_flashdata('errors', '<p>Unable to Update Financial Option State.</p>');
+            }
+        } else {
+            $this->session->set_flashdata('errors', validation_errors());
+        }
+
         redirect('setting/financial-options');
     }
 

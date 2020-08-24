@@ -9,8 +9,12 @@ class Docs extends CI_Controller
 
 		$this->load->helper(['form', 'security', 'cookie']);
 		$this->load->library(['session', 'image_lib']);
-		$this->load->model(['JobsDocModel', 'Common_model']);
+		$this->load->model(['JobsDocModel', 'Common_model', 'LeadModel', 'ActivityLogsModel', 'FinancialModel', 'LeadMaterialModel']);
 		$this->doc = new JobsDocModel();
+		$this->lead = new LeadModel();
+		$this->activityLogs = new ActivityLogsModel();
+		$this->financial = new FinancialModel();
+		$this->lead_material = new LeadMaterialModel();
 	}
 
 	public function index($job_id, $sub_base_path = '')
@@ -18,14 +22,23 @@ class Docs extends CI_Controller
 		authAccess();
 		
 		$sub_base_path = $sub_base_path != '' ? ($sub_base_path . '/') : $sub_base_path;
+		$lead = $this->lead->getLeadById($job_id);
+		$financial_record = $this->financial->getContractDetailsByJobId($job_id);
 		$params = array();
 		$params['job_id'] = $job_id;
 		$params['is_active'] = 1;
 		$docs = $this->Common_model->get_all_where('jobs_doc', $params);
+		$primary_material_info = $this->lead_material->getPrimaryMaterialInfoByLeadId($job_id);
+		$financials = $this->financial->allFinancialsForReceipt($job_id);
+		
 		$this->load->view('header', ['title' => 'Add Doucment']);
 		$this->load->view('doc/index', [
+			'lead' => $lead,
+			'financial_record' => $financial_record,
 			'docs' => $docs,
 			'jobid' => $job_id,
+			'primary_material_info' => $primary_material_info,
+			'financials' => $financials,
 			'sub_base_path' => $sub_base_path
 		]);
 		$this->load->view('footer');
@@ -168,6 +181,11 @@ class Docs extends CI_Controller
 			$params['is_active'] = TRUE;
 			$this->db->insert('jobs_doc', $params);
 			$insertId = $this->db->insert_id();
+			$al_insert = $this->activityLogs->insert([
+				'module' => 0,
+				'module_id' => $posts['id'],
+				'type' => 3
+			]);
 			$total = $this->doc->getCount(['is_active' => 1, 'job_id' => $posts['id']]);
 			echo '<tr id="doc' . $insertId . '"><td>' . $total . '</td><td><p id="docp' . $insertId . '">' . $trimmed . '</p><input style="width: 70%;display:none" name="' . $insertId . '" type="text" class="docname" placeholder="Enter new name" id="doctext' . $insertId . '" /></td><td>' . $data[$i] . '</td><td class="text-center"><a target="_blank" href="' . base_url('assets/job_doc/' . $data[$i]) . '"><i class="fa fa-eye text-info"></i></a></td><td class="text-center"><span class="' . $insertId . '"><i class="del-edit fa fa-pencil text-warning"></i></span></td><td class="text-center"><i class="del-doc fa fa-trash-o text-danger" id="' . $insertId . '"></i></td></tr>';
 		}

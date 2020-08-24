@@ -121,13 +121,16 @@ lbd = {
 
             });
 
+            addSearchEvents();
+            loadMobileMenuScripts();
             mobile_menu_initialized = true;
         } else {
             if($(window).width() > 991){
                 // reset all the additions that we made for the sidebar wrapper only if the screen is bigger than 991px
                 // $sidebar_wrapper.find('.navbar-form').remove();
                 $sidebar_wrapper.find('.nav-mobile-menu').remove();
-
+                
+                addSearchEvents();
                 mobile_menu_initialized = false;
             }
         }

@@ -33,6 +33,8 @@
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
     <link href='https://fonts.googleapis.com/css?family=Roboto:400,700,300' rel='stylesheet' type='text/css'>
     <link href="<?= base_url('assets/css/pe-icon-7-stroke.css') ?>" rel="stylesheet" />
+    <!-- select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
     <!-- Others -->
     <link rel="stylesheet" type="text/css" href="<?= base_url('assets/css/jquery.fancybox.min.css') ?>">
 
@@ -49,10 +51,19 @@
     <!-- At.js JS -->
     <script src="<?= base_url('assets/js/jquery.caret.js') ?>"></script>
     <script src="<?= base_url('assets/js/jquery.atwho.js') ?>"></script>
+    <!-- moment.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment.min.js"></script>
+    <!-- validate.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/validate.js/0.13.1/validate.min.js"></script>
+    <!-- select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
     <!-- Others -->
+    <script src="<?= base_url('assets/js/search-box.js') ?>"></script>
     <script src="<?= base_url('assets/js/light-bootstrap-dashboard.js?v=1.4.0') ?>"></script>
     <script src="<?= base_url('assets/js/demo.js') ?>"></script>
     <script src="<?= base_url('assets/js/jquery.fancybox.js') ?>"></script>
+    <script src="<?= base_url('assets/js/validate-support.js') ?>"></script>
+    <script src="<?= base_url('assets/js/show-edit-section.js') ?>"></script>
 
 </head>
 
@@ -96,7 +107,7 @@
                             <p>All Statuses</p>
                         </a>
                     </li>
-                    <li>
+                    <!-- <li>
                         <a href="<?= base_url('lead/cash-jobs') ?>">
                             <i class="pe-7s-user"></i>
                             <p>Cash Jobs</p>
@@ -149,7 +160,7 @@
                             <i class="pe-7s-note"></i>
                             <p>Archive Jobs</p>
                         </a>
-                    </li>
+                    </li> -->
                     <li>
                         <a class="nav-link" data-toggle="collapse" href="#financialCollapse">
                             <i class="pe-7s-graph"></i>
@@ -158,12 +169,23 @@
                         <div class="collapse submenu" id="financialCollapse">
                             <ul class="nav">
                                 <li class="nav-item ">
+                                    <a class="nav-link" href="<?= base_url('financial/estimates') ?>">
+                                        <span class="sidebar-normal">Estimates</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item ">
                                     <a class="nav-link" href="<?= base_url('financial/records') ?>">
                                         <span class="sidebar-normal">Records</span>
                                     </a>
                                 </li>
                             </ul>
                         </div>
+                    </li>
+                    <li>
+                        <a href="<?= base_url('vendors') ?>">
+                            <i class="pe-7s-note2"></i>
+                            <p>Vendors</p>
+                        </a>
                     </li>
                     <li>
                         <a href="<?= base_url('users') ?>">
@@ -181,6 +203,12 @@
                         <a href="<?= base_url('company-docs') ?>">
                             <i class="pe-7s-note"></i>
                             <p>Company Documents</p>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= base_url('company-photos') ?>">
+                            <i class="pe-7s-note"></i>
+                            <p>Company Photos</p>
                         </a>
                     </li>
                     <li class="">
@@ -201,8 +229,48 @@
                                     </a>
                                 </li>
                                 <li class="nav-item ">
+                                    <a class="nav-link" href="<?= base_url('items') ?>">
+                                        <span class="sidebar-normal">Items</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item ">
+                                    <a class="nav-link" href="<?= base_url('assemblies') ?>">
+                                        <span class="sidebar-normal">Assemblies</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item ">
                                     <a class="nav-link" href="<?= base_url('setting/financial-options') ?>">
                                         <span class="sidebar-normal">Financial Options</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item ">
+                                    <a class="nav-link" href="<?= base_url('setting/client-options') ?>">
+                                        <span class="sidebar-normal">Client Options</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item ">
+                                    <a class="nav-link" href="<?= base_url('setting/task-options') ?>">
+                                        <span class="sidebar-normal">Task Options</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item ">
+                                    <a class="nav-link" href="<?= base_url('setting/user-options') ?>">
+                                        <span class="sidebar-normal">User Options</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item ">
+                                    <a class="nav-link" href="<?= base_url('setting/smtp-settings') ?>">
+                                        <span class="sidebar-normal">SMTP Settings</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item ">
+                                    <a class="nav-link" href="<?= base_url('setting/twilio-settings') ?>">
+                                        <span class="sidebar-normal">Twilio Settings</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item ">
+                                    <a class="nav-link" href="<?= base_url('setting/dashboard-options') ?>">
+                                        <span class="sidebar-normal">Dashboard Options</span>
                                     </a>
                                 </li>
                             </ul>
@@ -234,6 +302,31 @@
 
 
                         <ul class="nav navbar-nav navbar-right">
+
+                            <li>
+                                <div class="search-box">
+                                    <i class="fa fa-search" aria-hidden="true"></i>
+                                    <input type="search" name="search" id="search" autocomplete="off">
+                                    <div class="search-result">
+                                        <div class="leads-search-result">
+                                        </div>
+                                        <div class="tasks-search-result">
+                                        </div>
+                                        <div class="users-search-result">
+                                        </div>
+                                        <div class="loading-sign">
+                                            <div class="text-center">
+                                                <small>Loading...</small>
+                                            </div>
+                                        </div>
+                                        <div class="no-result">
+                                            <div class="text-center">
+                                                <small>No Result Found!</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
 
                             <li>
                                 <a href="">Welcome <strong><?= ($admin['first_name'] . ' ' . $admin['last_name']) ?></strong></a>

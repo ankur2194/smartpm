@@ -91,12 +91,17 @@ class UserModel extends CI_Model
 		]);
 	}
 
-	public function allUsers($start = 0, $limit = 10)
+	public function allUsers()
 	{
+		$this->db->select("
+			users.*,
+			user_cell_notif_suffixs.cell_provider as cell_1_provider_name,
+			user_cell_notif_suffixs.suffix as cell_1_provider_suffix
+		");
 		$this->db->from($this->table);
-		$this->db->where('is_deleted', FALSE);
-		$this->db->order_by('id', 'ASC');
-		$this->db->limit($limit, $start);
+		$this->db->join('user_cell_notif_suffixs', 'users.cell_1_provider=user_cell_notif_suffixs.id', 'left');
+		$this->db->where('users.is_deleted', FALSE);
+		$this->db->order_by('users.id', 'ASC');
 		$query = $this->db->get();
 		return $query->result();
 	}
@@ -109,10 +114,16 @@ class UserModel extends CI_Model
 
 	public function getUserById($id)
 	{
+		$this->db->select("
+			users.*,
+			user_cell_notif_suffixs.cell_provider as cell_1_provider_name,
+			user_cell_notif_suffixs.suffix as cell_1_provider_suffix
+		");
 		$this->db->from($this->table);
+		$this->db->join('user_cell_notif_suffixs', 'users.cell_1_provider=user_cell_notif_suffixs.id', 'left');
 		$this->db->where([
-			'id' => $id,
-			'is_deleted' => FALSE
+			'users.id' => $id,
+			'users.is_deleted' => FALSE
 		]);
 		$query = $this->db->get();
 		$result = $query->first_row();
@@ -194,12 +205,73 @@ class UserModel extends CI_Model
 		return array_column($query->result_array(), 'id');
 	}
 
+	public function getEmailIdArrByUserIds($userIds)
+	{
+		$this->db->select('email_id');
+		$this->db->where_in('id', $userIds);
+		$this->db->from($this->table);
+		$query = $this->db->get();
+		return array_column($query->result_array(), 'email_id');
+	}
+
+	public function getMobEmailIdArrByUserIds($userIds)
+	{
+		$this->db->select("CONCAT(users.cell_1, user_cell_notif_suffixs.suffix) AS mob_email_id");
+		$this->db->from($this->table);
+		$this->db->join('user_cell_notif_suffixs', 'users.cell_1_provider=user_cell_notif_suffixs.id', 'left');
+		$this->db->where_in('users.id', $userIds);
+		$this->db->where('users.cell_1 !=', null);
+		$this->db->where('users.cell_1 !=', '');
+		$this->db->where('users.cell_1_provider !=', null);
+		$this->db->where('users.cell_1_provider !=', '');
+		$query = $this->db->get();
+		return array_column($query->result_array(), 'mob_email_id');
+	}
+
+	public function getPhoneArrByUserIds($userIds)
+	{
+		$this->db->select("cell_1 AS phone");
+		$this->db->from($this->table);
+		$this->db->where_in('id', $userIds);
+		$this->db->where('cell_1 !=', null);
+		$this->db->where('cell_1 !=', '');
+		$query = $this->db->get();
+		return array_column($query->result_array(), 'phone');
+	}
+
 	public function get_crm_data($table, $cols, $condition)
 	{
 		return $this->db->select($cols)
 			->get_where($table, $condition)
 			->row_array();
 	}
+
+    public function search($keywords)
+    {
+        if (count($keywords) <= 0) {
+            return [];
+		}
+		$this->db->select("id, first_name, last_name, username, email_id, office_phone, home_phone, cell_1, cell_2");
+        $this->db->from($this->table);
+        $this->db->where([
+            'is_deleted' => FALSE
+        ]);
+        $this->db->group_start();
+        foreach ($keywords as $k) {
+            $this->db->or_like('first_name', $k);
+            $this->db->or_like('last_name', $k);
+            $this->db->or_like('username', $k);
+            $this->db->or_like('email_id', $k);
+            $this->db->or_like('office_phone', $k);
+            $this->db->or_like('home_phone', $k);
+            $this->db->or_like('cell_1', $k);
+            $this->db->or_like('cell_2', $k);
+        }
+        $this->db->group_end();
+        $this->db->order_by('created_at', 'ASC');
+        $query = $this->db->get();
+        return $query->result();
+    }
 
 	/**
 	 * Private Methods
